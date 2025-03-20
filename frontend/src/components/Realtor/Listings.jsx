@@ -146,13 +146,14 @@ const DELETE_PROPERTY = gql`
 const ListingsPage = () => {
   const [activeTab, setActiveTab] = useState('properties');
   const [listings, setListings] = useState([]);
+
   const [viewType, setViewType] = useState('card');
   const { themeClasses } = useContext(ThemeContext);
 
-  // Modal and form state
+  // Modal and form states
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  // New state for delete confirm modal
+  // New state for delete confirm modals
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [propertyToArchive, setPropertyToArchive] = useState(null);
 
