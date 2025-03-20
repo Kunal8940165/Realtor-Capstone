@@ -146,6 +146,7 @@ const DELETE_PROPERTY = gql`
 const ListingsPage = () => {
   const [activeTab, setActiveTab] = useState('properties');
   const [listings, setListings] = useState([]);
+  
   const [viewType, setViewType] = useState('card');
   const { themeClasses } = useContext(ThemeContext);
 
