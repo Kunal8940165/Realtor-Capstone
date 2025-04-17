@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation, gql } from '@apollo/client';
 import { ThemeContext } from '../Realtor/ThemeContext';
 import { FaArrowRight, FaImage } from 'react-icons/fa';
+import RealtorChat from '../Realtor/RealtorChat';
 
 const UPDATE_USER = gql`
   mutation UpdateUser($id: ID!, $input: UpdateUserInput!, $profilePicture: Upload) {
@@ -51,7 +52,7 @@ const SettingsPage = () => {
   }, []);
 
   const profilePictureUrl = user
-    ? `http://localhost:5373${user.profilePicture}`
+    ? `${user.profilePicture}`
     : '/uploads/default-profile.jpg';
 
   const handleUpdate = async (e) => {
@@ -276,6 +277,7 @@ const SettingsPage = () => {
             </form>
           </div>
         </div>
+        <RealtorChat />
       </div>
     </>
   );

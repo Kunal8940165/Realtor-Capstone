@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, NavLink } from 'react-router-dom';
-import { FaCog, FaSignOutAlt } from 'react-icons/fa';
+import { FaCog, FaSignOutAlt, FaEye } from 'react-icons/fa';
 
 const Navbar = () => {
   const [user, setUser] = useState(null);
@@ -40,7 +40,14 @@ const Navbar = () => {
   };
 
   // Construct the full image URL dynamically
-  const profilePictureUrl = user ? `http://localhost:5373${user.profilePicture}` : '/uploads/default-profile.jpg';
+  const profilePictureUrl = user ? `${user.profilePicture}` : '/uploads/default-profile.jpg';
+
+  const handleBookingsClick = () => {
+    // Navigate to the bookings page if the user is a client
+    if (user?.role === 'CLIENT') {
+      navigate('/bookings');  // Assuming your bookings page route is `/bookings`
+    }
+  };
 
   return (
     <motion.nav
@@ -60,9 +67,8 @@ const Navbar = () => {
         </NavLink>
         <div className="hidden md:flex space-x-8">
           <a href="/" className="text-gray-600 hover:text-gray-900 transition-colors">Home</a>
-          <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">Features</a>
-          <a href="#about" className="text-gray-600 hover:text-gray-900 transition-colors">About</a>
-          <a href="#contact" className="text-gray-600 hover:text-gray-900 transition-colors">Contact</a>
+          <a href="/about-us" className="text-gray-600 hover:text-gray-900 transition-colors">About Us</a>
+          <a href="/contact-us" className="text-gray-600 hover:text-gray-900 transition-colors">Contact Us</a>
         </div>
         <div>
           {user ? (
@@ -97,6 +103,16 @@ const Navbar = () => {
                       <FaCog className="mr-2" />
                       Settings
                     </button>
+                    
+                    {user.role === 'CLIENT' && (
+                      <button 
+                        onClick={handleBookingsClick}
+                        className="flex items-center px-4 py-2 text-sm text-blue-600 hover:bg-blue-100 w-full"
+                      >
+                        <FaEye className="mr-2" />
+                        View Bookings
+                      </button>
+                    )}
                     <button 
                       onClick={() => { handleLogout(); setDropdownOpen(false); }}
                       className="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-100 w-full"

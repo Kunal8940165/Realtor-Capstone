@@ -62,10 +62,35 @@ const bookingSchema = new mongoose.Schema({
     ref: 'Property',
     required: true
   },
+  created_by: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false
+  },
   createdAt: {
     type: Date,
     default: Date.now,
   },
-});
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
+  name: {
+    type: String,
+    default: ''
+  },
+  email: {
+    type: String,
+    default: ''
+  },
+  phone:  {
+    type: String,
+    default: ''
+  },
+  isRealtor : {
+    type: Boolean,
+    default: false
+  },
+},{ timestamps: true });
 
 module.exports = mongoose.model("Booking", bookingSchema);

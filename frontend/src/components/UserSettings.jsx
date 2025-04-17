@@ -50,7 +50,7 @@ const UserSettings = () => {
   }, []);
 
   const profilePictureUrl = user
-    ? `http://localhost:5373${user.profilePicture}`
+    ? `${user.profilePicture}`
     : '/uploads/default-profile.jpg';
 
   if (!user) {
