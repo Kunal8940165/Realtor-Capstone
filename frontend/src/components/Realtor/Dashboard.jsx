@@ -13,6 +13,7 @@ import {
 } from 'recharts';
 import { FaHome, FaUsers, FaCalendarAlt } from 'react-icons/fa';
 import { ThemeContext } from './ThemeContext';
+import RealtorChat from './RealtorChat';
 
 const GET_ALL_PROPERTIES = gql`
   query GetAllProperties($filter: PropertyFilterInput) {
@@ -63,6 +64,7 @@ const DashboardPage = () => {
   const { data: propertiesData, loading: propertiesLoading, error: propertiesError } = useQuery(GET_ALL_PROPERTIES);
   const { data: bookingsData, loading: bookingsLoading, error: bookingsError } = useQuery(GET_BOOKINGS, {
     variables: { realtorId },
+    fetchPolicy: "network-only", 
   });
 
   const totalListings =
@@ -173,6 +175,7 @@ const DashboardPage = () => {
           </BarChart>
         </ResponsiveContainer>
       </div>
+      <RealtorChat />
     </div>
   );
 };

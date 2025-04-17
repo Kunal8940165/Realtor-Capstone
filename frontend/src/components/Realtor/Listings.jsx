@@ -3,6 +3,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useQuery, useMutation, gql } from '@apollo/client';
 import { FaTh, FaList, FaEdit, FaPlus, FaTrash } from 'react-icons/fa';
 import { ThemeContext } from './ThemeContext';
+import RealtorChat from './RealtorChat';
 
 // Existing queries
 const GET_PROPERTIES = gql`
@@ -143,34 +144,36 @@ const DELETE_PROPERTY = gql`
   }
 `;
 
+// Define an initial form state constant
+const initialFormState = {
+  id: '',
+  title: '',
+  description: '',
+  price: '',
+  location: '',
+  bedrooms: '',
+  bathrooms: '',
+  propertyType: '',
+  squareFeet: '',
+  furnished: false,
+  hasParking: false,
+  features: '',
+};
+
 const ListingsPage = () => {
   const [activeTab, setActiveTab] = useState('properties');
   const [listings, setListings] = useState([]);
-
   const [viewType, setViewType] = useState('card');
   const { themeClasses } = useContext(ThemeContext);
 
-  // Modal and form states
+  // Modal and form state
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  // New state for delete confirm modals
+  // New state for delete confirm modal
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [propertyToArchive, setPropertyToArchive] = useState(null);
 
-  const [formState, setFormState] = useState({
-    id: '',
-    title: '',
-    description: '',
-    price: '',
-    location: '',
-    bedrooms: '',
-    bathrooms: '',
-    propertyType: '',
-    squareFeet: '',
-    furnished: false,
-    hasParking: false,
-    features: '',
-  });
+  const [formState, setFormState] = useState(initialFormState);
   // New state for file uploads
   const [imageFiles, setImageFiles] = useState([]);
 
@@ -223,6 +226,12 @@ const ListingsPage = () => {
     setImageFiles(Array.from(e.target.files));
   };
 
+  // Function to reset the form state and clear files
+  const resetForm = () => {
+    setFormState(initialFormState);
+    setImageFiles([]);
+  };
+
   // Handler for adding a new property
   const handleAddProperty = async (e) => {
     e.preventDefault();
@@ -265,22 +274,7 @@ const ListingsPage = () => {
           features: featuresArray,
         },
       ]);
-      // Reset form and image files
-      setFormState({
-        id: '',
-        title: '',
-        description: '',
-        price: '',
-        location: '',
-        bedrooms: '',
-        bathrooms: '',
-        propertyType: '',
-        squareFeet: '',
-        furnished: false,
-        hasParking: false,
-        features: '',
-      });
-      setImageFiles([]);
+      resetForm();
       setShowAddModal(false);
     } catch (err) {
       console.error(err);
@@ -288,69 +282,64 @@ const ListingsPage = () => {
   };
 
   // Handler for editing an existing property
-  const handleEditProperty = async (e) => {
-    e.preventDefault();
-    try {
-      const featuresArray = formState.features.split(',').map(f => f.trim()).filter(Boolean);
-      const response = await updatePropertyMutation({
-        variables: {
-          id: formState.id,
-          title: formState.title,
-          description: formState.description,
-          price: parseFloat(formState.price),
-          location: formState.location,
-          bedrooms: parseInt(formState.bedrooms),
-          bathrooms: parseInt(formState.bathrooms),
-          propertyType: formState.propertyType,
-          squareFeet: parseInt(formState.squareFeet),
-          furnished: formState.furnished,
-          hasParking: formState.hasParking,
-          features: featuresArray,
-          images: imageFiles.length ? imageFiles : null,
-        },
-      });
-      const updated = response.data.updateProperty;
-      setListings(prev =>
-        prev.map(prop =>
-          prop.id === updated.id
-            ? {
-                ...prop,
-                property: updated.title,
-                location: updated.location,
-                images: updated.images,
-                price: `$${Number(updated.price).toLocaleString()}`,
-                description: formState.description,
-                bedrooms: formState.bedrooms,
-                bathrooms: formState.bathrooms,
-                propertyType: formState.propertyType,
-                squareFeet: formState.squareFeet,
-                furnished: formState.furnished,
-                hasParking: formState.hasParking,
-                features: featuresArray,
-              }
-            : prop
-        )
-      );
-      setFormState({
-        id: '',
-        title: '',
-        description: '',
-        price: '',
-        location: '',
-        bedrooms: '',
-        bathrooms: '',
-        propertyType: '',
-        squareFeet: '',
-        furnished: false,
-        hasParking: false,
-        features: '',
-      });
-      setImageFiles([]);
-      setShowEditModal(false);
-    } catch (err) {
-      console.error(err);
+  // Handler for editing an existing property
+const handleEditProperty = async (e) => {
+  e.preventDefault();
+  try {
+    const featuresArray = formState.features.split(',').map(f => f.trim()).filter(Boolean);
+    // Build the mutation variables without the images key
+    const mutationVariables = {
+      id: formState.id,
+      title: formState.title,
+      description: formState.description,
+      price: parseFloat(formState.price),
+      location: formState.location,
+      bedrooms: parseInt(formState.bedrooms),
+      bathrooms: parseInt(formState.bathrooms),
+      propertyType: formState.propertyType,
+      squareFeet: parseInt(formState.squareFeet),
+      furnished: formState.furnished,
+      hasParking: formState.hasParking,
+      features: featuresArray,
+    };
+
+    // Only include images if new files have been selected
+    if (imageFiles.length > 0) {
+      mutationVariables.images = imageFiles;
     }
-  };
+    
+    const response = await updatePropertyMutation({
+      variables: mutationVariables,
+    });
+    const updated = response.data.updateProperty;
+    setListings(prev =>
+      prev.map(prop =>
+        prop.id === updated.id
+          ? {
+              ...prop,
+              property: updated.title,
+              location: updated.location,
+              images: updated.images, // This remains unchanged if no new image was provided
+              price: `$${Number(updated.price).toLocaleString()}`,
+              description: formState.description,
+              bedrooms: formState.bedrooms,
+              bathrooms: formState.bathrooms,
+              propertyType: formState.propertyType,
+              squareFeet: formState.squareFeet,
+              furnished: formState.furnished,
+              hasParking: formState.hasParking,
+              features: featuresArray,
+            }
+          : prop
+      )
+    );
+    resetForm();
+    setShowEditModal(false);
+  } catch (err) {
+    console.error(err);
+  }
+};
+
 
   // Opens the custom archive confirm modal
   const openArchiveModal = (id) => {
@@ -358,7 +347,7 @@ const ListingsPage = () => {
     setShowConfirmModal(true);
   };
 
-  // Called when user confirms deletion
+  // Called when user confirms deletion (archiving)
   const confirmArchive = async () => {
     try {
       await deletePropertyMutation({ variables: { id: propertyToArchive } });
@@ -417,30 +406,21 @@ const ListingsPage = () => {
     </div>
   );
 
-  // Modal component for Add/Edit Property form
+  // Updated modal component for Add/Edit Property with two-column layout and validations
   const renderAddEditModal = (isEdit = false) => (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-      <div className="bg-white rounded-lg w-11/12 md:w-1/2 p-6">
+      <div className="bg-white rounded-lg w-11/12 md:w-1/2 p-6 max-h-screen overflow-y-auto">
         <h3 className="text-2xl font-semibold mb-4">
           {isEdit ? 'Edit Property' : 'Add Property'}
         </h3>
         <form onSubmit={isEdit ? handleEditProperty : handleAddProperty}>
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <input
               type="text"
               placeholder="Title"
               value={formState.title}
               onChange={(e) =>
                 setFormState({ ...formState, title: e.target.value })
-              }
-              className="border p-2 rounded"
-              required
-            />
-            <textarea
-              placeholder="Description"
-              value={formState.description}
-              onChange={(e) =>
-                setFormState({ ...formState, description: e.target.value })
               }
               className="border p-2 rounded"
               required
@@ -452,7 +432,19 @@ const ListingsPage = () => {
               onChange={(e) =>
                 setFormState({ ...formState, price: e.target.value })
               }
+              onInput={(e) =>
+                (e.target.value = e.target.value.replace(/[^0-9.]/g, ''))
+              }
               className="border p-2 rounded"
+              required
+            />
+            <textarea
+              placeholder="Description"
+              value={formState.description}
+              onChange={(e) =>
+                setFormState({ ...formState, description: e.target.value })
+              }
+              className="border p-2 rounded col-span-2"
               required
             />
             <input
@@ -465,12 +457,31 @@ const ListingsPage = () => {
               className="border p-2 rounded"
               required
             />
+            <select
+              value={formState.propertyType}
+              onChange={(e) =>
+                setFormState({ ...formState, propertyType: e.target.value })
+              }
+              className="border p-2 rounded"
+              required
+            >
+              <option value="" disabled>
+                Select property type
+              </option>
+              <option value="HOUSE">HOUSE</option>
+              <option value="APARTMENT">APARTMENT</option>
+              <option value="CONDO">CONDO</option>
+              <option value="TOWNHOUSE">TOWNHOUSE</option>
+            </select>
             <input
               type="number"
               placeholder="Bedrooms"
               value={formState.bedrooms}
               onChange={(e) =>
                 setFormState({ ...formState, bedrooms: e.target.value })
+              }
+              onInput={(e) =>
+                (e.target.value = e.target.value.replace(/[^0-9]/g, ''))
               }
               className="border p-2 rounded"
               required
@@ -482,15 +493,8 @@ const ListingsPage = () => {
               onChange={(e) =>
                 setFormState({ ...formState, bathrooms: e.target.value })
               }
-              className="border p-2 rounded"
-              required
-            />
-            <input
-              type="text"
-              placeholder="Property Type (HOUSE, APARTMENT, etc.)"
-              value={formState.propertyType}
-              onChange={(e) =>
-                setFormState({ ...formState, propertyType: e.target.value })
+              onInput={(e) =>
+                (e.target.value = e.target.value.replace(/[^0-9]/g, ''))
               }
               className="border p-2 rounded"
               required
@@ -502,28 +506,33 @@ const ListingsPage = () => {
               onChange={(e) =>
                 setFormState({ ...formState, squareFeet: e.target.value })
               }
+              onInput={(e) =>
+                (e.target.value = e.target.value.replace(/[^0-9]/g, ''))
+              }
               className="border p-2 rounded"
               required
             />
-            <div className="flex items-center">
-              <label className="mr-2">Furnished:</label>
-              <input
-                type="checkbox"
-                checked={formState.furnished}
-                onChange={(e) =>
-                  setFormState({ ...formState, furnished: e.target.checked })
-                }
-              />
-            </div>
-            <div className="flex items-center">
-              <label className="mr-2">Has Parking:</label>
-              <input
-                type="checkbox"
-                checked={formState.hasParking}
-                onChange={(e) =>
-                  setFormState({ ...formState, hasParking: e.target.checked })
-                }
-              />
+            <div className="flex items-center space-x-4 col-span-2">
+              <div className="flex items-center">
+                <label className="mr-2">Furnished:</label>
+                <input
+                  type="checkbox"
+                  checked={formState.furnished}
+                  onChange={(e) =>
+                    setFormState({ ...formState, furnished: e.target.checked })
+                  }
+                />
+              </div>
+              <div className="flex items-center">
+                <label className="mr-2">Has Parking:</label>
+                <input
+                  type="checkbox"
+                  checked={formState.hasParking}
+                  onChange={(e) =>
+                    setFormState({ ...formState, hasParking: e.target.checked })
+                  }
+                />
+              </div>
             </div>
             <input
               type="text"
@@ -532,25 +541,32 @@ const ListingsPage = () => {
               onChange={(e) =>
                 setFormState({ ...formState, features: e.target.value })
               }
-              className="border p-2 rounded"
+              className="border p-2 rounded col-span-2"
             />
             <input
               type="file"
               multiple
               onChange={handleImageChange}
-              className="border p-2 rounded"
+              className="border p-2 rounded col-span-2"
             />
           </div>
           <div className="mt-4 flex justify-end space-x-4">
             <button
               type="button"
-              onClick={() => (isEdit ? setShowEditModal(false) : setShowAddModal(false))}
+              onClick={() => {
+                resetForm();
+                isEdit ? setShowEditModal(false) : setShowAddModal(false);
+              }}
               className="px-4 py-2 bg-gray-300 text-gray-700 rounded"
             >
               Cancel
             </button>
-            <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded">
-              {isEdit ? 'Save Changes' : 'Add Property'}
+            <button
+              type="submit"
+              disabled={isEdit ? updateLoading : addLoading}
+              className="px-4 py-2 bg-indigo-600 text-white rounded"
+            >
+              {isEdit ? (updateLoading ? 'Saving...' : 'Save Changes') : (addLoading ? 'Adding...' : 'Add Property')}
             </button>
           </div>
         </form>
@@ -596,7 +612,10 @@ const ListingsPage = () => {
           <div className="flex justify-between items-center mb-4">
             {renderViewToggle()}
             <button
-              onClick={() => setShowAddModal(true)}
+              onClick={() => {
+                resetForm();
+                setShowAddModal(true);
+              }}
               className="flex items-center px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors duration-200"
             >
               <FaPlus className="mr-2" /> Add Property
@@ -637,7 +656,7 @@ const ListingsPage = () => {
                         <img
                           src={
                             listing.images && listing.images[0]
-                              ? `http://localhost:5373/${listing.images[0]}`
+                              ? `${listing.images[0]}`
                               : 'https://placehold.co/300x200'
                           }
                           alt={listing.property}
@@ -680,7 +699,7 @@ const ListingsPage = () => {
                   <img
                     src={
                       listing.images && listing.images[0]
-                        ? `http://localhost:5373${listing.images[0]}`
+                        ? `${listing.images[0]}`
                         : 'https://placehold.co/300x200'
                     }
                     alt={listing.property}
@@ -759,7 +778,7 @@ const ListingsPage = () => {
                             src={
                               booking.property.images &&
                               booking.property.images[0]
-                                ? `http://localhost:5373${booking.property.images[0]}`
+                                ? `${booking.property.images[0]}`
                                 : 'https://placehold.co/300x200'
                             }
                             alt={booking.property.title}
@@ -795,7 +814,7 @@ const ListingsPage = () => {
                       src={
                         booking.property.images &&
                         booking.property.images[0]
-                          ? `http://localhost:5373${booking.property.images[0]}`
+                          ? `${booking.property.images[0]}`
                           : 'https://placehold.co/300x200'
                       }
                       alt={booking.property.title}
@@ -851,6 +870,7 @@ const ListingsPage = () => {
           </div>
         </div>
       )}
+      <RealtorChat />
     </div>
   );
 };

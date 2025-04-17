@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { useQuery, gql } from '@apollo/client';
+import React, { useState, useEffect, useContext } from "react";
+import { useQuery, gql, useMutation } from "@apollo/client";
 import {
   FaEnvelope,
   FaHome,
@@ -9,8 +9,11 @@ import {
   FaTh,
   FaStream,
   FaUser,
-} from 'react-icons/fa';
-import { ThemeContext } from './ThemeContext';
+  FaCheck,
+  FaTimes,
+} from "react-icons/fa";
+import { ThemeContext } from "./ThemeContext";
+import RealtorChat from "./RealtorChat";
 
 const GET_BOOKINGS = gql`
   query GetBookings($realtorId: ID) {
@@ -27,32 +30,46 @@ const GET_BOOKINGS = gql`
       }
       property {
         title
+        location
       }
+      status
+      isRealtor
+    }
+  }
+`;
+
+const UPDATE_BOOKING_STATUS = gql`
+  mutation UpdateBookingStatus($id: ID!, $status: String!) {
+    updateBookingStatus(id: $id, status: $status) {
+      id
+      status
     }
   }
 `;
 
 const ClientsPage = () => {
   const { themeClasses } = useContext(ThemeContext);
-  const storedUser = localStorage.getItem('user');
+  const storedUser = localStorage.getItem("user");
   let realtorId = null;
   if (storedUser) {
     try {
       const userObj = JSON.parse(storedUser);
       realtorId = userObj.id;
     } catch (error) {
-      console.error('Error parsing user from localStorage:', error);
+      console.error("Error parsing user from localStorage:", error);
     }
   }
 
   const { data, loading, error } = useQuery(GET_BOOKINGS, {
     variables: { realtorId },
+    fetchPolicy: "network-only",
   });
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortOrder, setSortOrder] = useState('newest');
-  const [viewType, setViewType] = useState('table');
+  const [updateBookingStatus] = useMutation(UPDATE_BOOKING_STATUS);
+  const [searchQuery, setSearchQuery] = useState("");
   const [filteredBookings, setFilteredBookings] = useState([]);
+  const [viewType, setViewType] = useState("table"); // Default view is 'table'
+  const [sortOrder, setSortOrder] = useState("newest"); // Default sorting is newest
 
   useEffect(() => {
     if (data && data.getBookings) {
@@ -61,11 +78,11 @@ const ClientsPage = () => {
         const lowerSearch = searchQuery.toLowerCase();
         tempBookings = tempBookings.filter((booking) => {
           const clientName =
-            (booking.client?.firstName ? booking.client.firstName.toLowerCase() : '') +
-            ' ' +
-            (booking.client?.lastName ? booking.client.lastName.toLowerCase() : '');
-          const clientEmail = booking.client?.email?.toLowerCase() || '';
-          const propertyTitle = booking.property?.title?.toLowerCase() || '';
+            (booking.client?.firstName ? booking.client.firstName.toLowerCase() : "") +
+            " " +
+            (booking.client?.lastName ? booking.client.lastName.toLowerCase() : "");
+          const clientEmail = booking.client?.email?.toLowerCase() || "";
+          const propertyTitle = booking.property?.title?.toLowerCase() || "";
           return (
             clientName.includes(lowerSearch) ||
             clientEmail.includes(lowerSearch) ||
@@ -74,7 +91,7 @@ const ClientsPage = () => {
         });
       }
       tempBookings.sort((a, b) =>
-        sortOrder === 'newest'
+        sortOrder === "newest"
           ? new Date(b.date) - new Date(a.date)
           : new Date(a.date) - new Date(b.date)
       );
@@ -82,34 +99,38 @@ const ClientsPage = () => {
     }
   }, [data, searchQuery, sortOrder]);
 
+  const handleApprovalChange = (e, bookingId, status) => {
+    updateBookingStatus({ variables: { id: bookingId, status: status } });
+  };
+
   const renderViewToggle = () => (
     <div className="flex justify-end mb-4 space-x-2">
       <button
-        onClick={() => setViewType('table')}
+        onClick={() => setViewType("table")}
         className={`px-4 py-2 border border-r-0 rounded-l-md focus:outline-none transition-colors duration-200 ${
-          viewType === 'table'
+          viewType === "table"
             ? `${themeClasses.primaryBg} text-white`
-            : 'bg-white text-gray-600 hover:bg-gray-100'
+            : "bg-white text-gray-600 hover:bg-gray-100"
         }`}
       >
         <FaList className="inline-block mr-1" /> Table
       </button>
       <button
-        onClick={() => setViewType('card')}
+        onClick={() => setViewType("card")}
         className={`px-4 py-2 border border-r-0 focus:outline-none transition-colors duration-200 ${
-          viewType === 'card'
+          viewType === "card"
             ? `${themeClasses.primaryBg} text-white`
-            : 'bg-white text-gray-600 hover:bg-gray-100'
+            : "bg-white text-gray-600 hover:bg-gray-100"
         }`}
       >
         <FaTh className="inline-block mr-1" /> Card
       </button>
       <button
-        onClick={() => setViewType('timeline')}
+        onClick={() => setViewType("timeline")}
         className={`px-4 py-2 border rounded-r-md focus:outline-none transition-colors duration-200 ${
-          viewType === 'timeline'
+          viewType === "timeline"
             ? `${themeClasses.primaryBg} text-white`
-            : 'bg-white text-gray-600 hover:bg-gray-100'
+            : "bg-white text-gray-600 hover:bg-gray-100"
         }`}
       >
         <FaStream className="inline-block mr-1" /> Timeline
@@ -119,11 +140,11 @@ const ClientsPage = () => {
 
   // Helper to generate profile image URL
   const getProfilePicUrl = (profilePicture) =>
-    profilePicture ? `http://localhost:5373${profilePicture}` : null;
+    profilePicture ? `${profilePicture}` : null;
 
   return (
-    <div className="container mx-auto p-6">
-      <h2 className="text-3xl font-semibold text-gray-800 mb-6">Client Bookings</h2>
+    <div className="p-6 bg-gray-100 min-h-screen">
+      <h2 className="text-2xl font-semibold text-gray-800 mb-6">Client Bookings</h2>
       <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
         <div className="flex items-center bg-white p-3 rounded-md shadow-md w-full md:w-1/3">
           <FaSearch className="text-gray-500 mr-2" />
@@ -150,7 +171,11 @@ const ClientsPage = () => {
           </select>
         </div>
       </div>
-      <div className="bg-white shadow-lg rounded-lg p-6 overflow-x-auto">
+
+      <div
+        className="bg-white shadow-lg rounded-lg p-6 overflow-x-auto"
+        style={{ maxHeight: "70vh", overflowY: "scroll" }} // Ensures scroll if many bookings
+      >
         {loading ? (
           <p className="text-gray-600">Loading bookings...</p>
         ) : error ? (
@@ -158,34 +183,24 @@ const ClientsPage = () => {
         ) : filteredBookings.length > 0 ? (
           <>
             {renderViewToggle()}
-            {viewType === 'table' && (
+
+            {viewType === "table" && (
               <table className="min-w-full table-auto">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600">
-                      Client Name
-                    </th>
-                    <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600">
-                      Email
-                    </th>
-                    <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600">
-                      Property
-                    </th>
-                    <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600">
-                      Booking Date
-                    </th>
-                    <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600">
-                      Time
-                    </th>
+                    <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600">Client Name</th>
+                    <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600">Email</th>
+                    <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600">Property</th>
+                    <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600">Booking Date</th>
+                    <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600">Time</th>
+                    <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600">Status</th>
+                    <th className="py-3 px-6 text-left text-sm font-semibold text-gray-600">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredBookings.map((booking) => (
-                    <tr
-                      key={booking.id}
-                      className="hover:bg-gray-50 transition-colors duration-200"
-                    >
-                      <td className="py-4 px-6 text-sm font-medium text-gray-800">
+                    <tr key={booking.id} className="hover:bg-gray-50 transition-colors duration-200">
+                      <td className="py-4 px-6 text-sm text-gray-800">
                         <div className="flex items-center">
                           {booking.client?.profilePicture ? (
                             <img
@@ -199,33 +214,52 @@ const ClientsPage = () => {
                           {booking.client?.firstName} {booking.client?.lastName}
                         </div>
                       </td>
-                      <td className="py-4 px-6 text-sm font-medium text-gray-800">
-                        <div className="flex items-center">
-                          <FaEnvelope className="text-gray-500 mr-2" />
-                          {booking.client?.email}
-                        </div>
+                      <td className="py-4 px-6 text-sm text-gray-800">
+                        {booking.client?.email}
                       </td>
-                      <td className="py-4 px-6 text-sm font-medium text-gray-800">
-                        <div className="flex items-center">
-                          <FaHome className="text-green-500 mr-2" />
-                          {booking.property?.title}
-                        </div>
+                      <td className="py-4 px-6 text-sm text-gray-800">{booking.property?.title}</td>
+                      <td className="py-4 px-6 text-sm text-gray-800">{new Date(booking.date).toLocaleDateString()}</td>
+                      <td className="py-4 px-6 text-sm text-gray-800">
+                        {booking.startTime} - {booking.endTime}
                       </td>
-                      <td className="py-4 px-6 text-sm font-medium text-gray-800">
-                        <div className="flex items-center">
-                          <FaCalendar className="text-purple-500 mr-2" />
-                          {new Date(booking.date).toLocaleDateString()}
-                        </div>
+                      <td className="py-4 px-6 text-sm text-gray-800">
+                        <span
+                          className={`py-1 px-3 text-xs font-semibold rounded-full ${
+                            booking.status === "CONFIRMED"
+                              ? "bg-green-200 text-green-800"
+                              : booking.status === "PENDING"
+                              ? "bg-yellow-200 text-yellow-800"
+                              : "bg-red-200 text-red-800"
+                          }`}
+                        >
+                          {booking.status}
+                        </span>
                       </td>
-                      <td className="py-4 px-6 text-sm font-medium text-gray-800">
-                        {booking.startTime} - {booking.endTime} hrs EST
+                      <td className="py-4 px-6 text-sm text-gray-800">
+                        {!booking.isRealtor && booking.status === "PENDING" && (
+                          <div className="flex gap-2">
+                            <button
+                              className="px-4 py-2 bg-green-500 text-white rounded-lg shadow-lg hover:bg-green-700 transition duration-300"
+                              onClick={(e) => handleApprovalChange(e, booking.id, "CONFIRMED")}
+                            >
+                              <FaCheck />
+                            </button>
+                            <button
+                              className="px-4 py-2 bg-red-500 text-white rounded-lg shadow-lg hover:bg-red-700 transition duration-300"
+                              onClick={(e) => handleApprovalChange(e, booking.id, "CANCELLED")}
+                            >
+                              <FaTimes />
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             )}
-            {viewType === 'card' && (
+
+            {viewType === "card" && (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                 {filteredBookings.map((booking) => (
                   <div
@@ -258,21 +292,36 @@ const ClientsPage = () => {
                     <p className="text-gray-700 text-sm">
                       {booking.startTime} - {booking.endTime} hrs EST
                     </p>
+                    {!booking.isRealtor && booking.status === "PENDING" && (
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          className="px-4 py-2 bg-green-500 text-white rounded-lg shadow-lg hover:bg-green-700 transition duration-300"
+                          onClick={(e) => handleApprovalChange(e, booking.id, "CONFIRMED")}
+                        >
+                          <FaCheck />
+                        </button>
+                        <button
+                          className="px-4 py-2 bg-red-500 text-white rounded-lg shadow-lg hover:bg-red-700 transition duration-300"
+                          onClick={(e) => handleApprovalChange(e, booking.id, "CANCELLED")}
+                        >
+                          <FaTimes />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             )}
-            {viewType === 'timeline' && (
+
+            {viewType === "timeline" && (
               <div className="relative">
-                {/* Continuous vertical line */}
                 <div
                   className="absolute top-0 bottom-0 w-1 bg-gray-200"
-                  style={{ left: '9rem' }}
+                  style={{ left: "9rem" }}
                 ></div>
                 <div className="space-y-8">
                   {filteredBookings.map((booking) => (
                     <div key={booking.id} className="flex items-start">
-                      {/* Date/Time Column */}
                       <div className="w-32 text-right pr-4">
                         <p className="text-gray-500 text-sm">
                           {new Date(booking.date).toLocaleDateString()}
@@ -281,11 +330,9 @@ const ClientsPage = () => {
                           {booking.startTime} - {booking.endTime} hrs EST
                         </p>
                       </div>
-                      {/* Marker Column */}
                       <div className="w-8 flex justify-center items-center">
                         <div className="h-4 w-4 bg-indigo-600 rounded-full border-2 border-white z-10"></div>
                       </div>
-                      {/* Booking Details Column */}
                       <div className="flex-1">
                         <div className="bg-white p-4 rounded-md shadow-lg transition-transform duration-200 hover:scale-105">
                           <div className="flex items-center mb-1">
@@ -320,6 +367,7 @@ const ClientsPage = () => {
           <p className="text-gray-600">No bookings found.</p>
         )}
       </div>
+      <RealtorChat />
     </div>
   );
 };

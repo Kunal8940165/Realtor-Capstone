@@ -216,7 +216,7 @@ const PropertyListings = () => {
                     src={
                       property.images &&
                       property.images[0]
-                        ? `http://localhost:5373${property.images[0]}`
+                        ? `${property.images[0]}`
                         : 'https://placehold.co/300x200'
                     }
                     alt={property.title}
@@ -251,7 +251,7 @@ const PropertyListings = () => {
                           </span>
                           {property.realtor?.profilePicture && (
                             <img
-                              src={`http://localhost:5373${property.realtor.profilePicture}`}
+                              src={`${property.realtor.profilePicture}`}
                               alt="Realtor"
                               className="w-6 h-6 rounded-full object-cover"
                             />

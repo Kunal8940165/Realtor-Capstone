@@ -1,16 +1,9 @@
 const nodemailer = require("nodemailer");
-const { createZoomMeeting } = require("../services/zoomService");
+
 require("dotenv").config();
 
-const sendEmail = async (to, subject, body, includeZoom = false) => {
+const sendEmail = async (to, subject, body) => {
   try {
-    let zoomLink = "";
-
-    // Generate Zoom Link if required
-    if (includeZoom) {
-      zoomLink = await createZoomMeeting();
-      body += `<p><strong>Zoom Link:</strong> <a href="${zoomLink}">${zoomLink}</a></p>`;
-    }
 
     // Configure Nodemailer SMTP
     const transporter = nodemailer.createTransport({
@@ -33,7 +26,6 @@ const sendEmail = async (to, subject, body, includeZoom = false) => {
     await transporter.sendMail(mailOptions);
 
     console.log(`📧 Email sent to ${to}`);
-    return zoomLink;
   } catch (error) {
     console.error("❌ Error sending email:", error);
     return null;

@@ -208,6 +208,15 @@ const Login = () => {
                 Create an Account
               </button>
             </div>
+            <div className="text-center mt-4">
+              <button
+                type="button"
+                className="text-sm text-purple-600 hover:underline"
+                onClick={() =>  navigate('/forgot-password')}
+              >
+                Forgot Password
+              </button>
+            </div>
           </form>
         </div>
       </motion.div>

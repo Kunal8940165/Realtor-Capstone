@@ -34,7 +34,7 @@ const Layout = () => {
 
   // Helper to create full profile picture URL
   const profilePictureUrl = user
-    ? `http://localhost:5373${user.profilePicture}`
+    ? `${user.profilePicture}`
     : '/uploads/default-profile.jpg';
 
   // Logout functionality
@@ -135,7 +135,7 @@ const Layout = () => {
                 }
               >
                 <FaUsers className="mr-4" size={20} />
-                {!isCollapsed && 'Clients'}
+                {!isCollapsed && 'Client Bookings'}
               </NavLink>
             </li>
             <li className="mb-4">
